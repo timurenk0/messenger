@@ -1,0 +1,54 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+env/
+.venv/
+.env/
+
+# VSCode settings (optional, if using VSCode)
+.vscode/
+
+# MacOS system files (optional)
+.DS_Store
+
+# Python egg and distribution stuff
+*.egg
+*.egg-info/
+dist/
+build/
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# Pytest cache
+.pytest_cache/
+
+# Environment variable files
+.env
+.env.*
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+
+# SQLite / DB files (optional, if your project generates them)
+*.sqlite3
+*.db
