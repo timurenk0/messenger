@@ -5,7 +5,7 @@ import socket
 
 class Protocol:
     # Set maximum file size that user can send at once = 2MB
-    MAX_SIZE = 2048 * 1024
+    MAX_FILE_SIZE = 2048 * 1024
 
     # Set message types to differntiate methods
     MESSAGE_TYPES = {
@@ -33,7 +33,7 @@ class Protocol:
     
     # Decode message from a socket (from JSON format)
     @staticmethod
-    def decode_message(sock, use_timeout=False):
+    def decode_message(sock, use_timeout=True):
         try:
             if use_timeout:
                 sock.settimeout(5.0) # Set timeout in case of synchronous calls

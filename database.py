@@ -102,7 +102,7 @@ def authenticate_user(self, username, password):
          return None
      
 # Fetch username from the database by user id
-def get_username_by_id(self, user_id):
+def get_username(self, user_id):
     try:
         cursor = self.conn.cursor()
         cursor.execute("SELECT username FROM users WHERE id = ?", (user_id,))
