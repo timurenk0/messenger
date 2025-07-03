@@ -113,16 +113,22 @@ class Protocol:
     # Create register request (handshake) message
     @staticmethod
     def create_register_message(username, password):
-        """Create a registration request message."""
         return Protocol.encode_message(
             Protocol.MESSAGE_TYPES["register"],
             {"username": username, "password": password}
+        )
+    
+    # Create contact list request (handshake) message
+    @staticmethod
+    def create_contact_list_request():
+        return Protocol.encode_message(
+            Protocol.MESSAGE_TYPES["contact_list"],
+            {}
         )
 
     # Create send text message request (handshake) message
     @staticmethod
     def create_text_message(sender, receiver, content):
-        """Create a text message."""
         return Protocol.encode_message(
             Protocol.MESSAGE_TYPES["message"],
             {"sender": sender, "receiver": receiver, "content": content}
@@ -131,13 +137,11 @@ class Protocol:
     # Create send file message request (handshake) message
     @staticmethod
     def create_file_message(receiver, filename, file_data):
-        """Create a file message."""
         return Protocol.encode_file(filename, file_data, receiver=receiver)
 
     # Create error message request (handshake) message
     @staticmethod
     def create_error_message(error_message):
-        """Create an error response message."""
         return Protocol.encode_message(
             Protocol.MESSAGE_TYPES["error"],
             {"message": error_message}
@@ -146,7 +150,6 @@ class Protocol:
     # Create success message request (handshake) message
     @staticmethod
     def create_success_message(message):
-        """Create a success response message."""
         return Protocol.encode_message(
             Protocol.MESSAGE_TYPES["success"],
             {"message": message}

@@ -90,58 +90,102 @@ class Server:
         self.database.close()
         self.logger.info("Server stopped")
 
+    def process_file_message(self, client_socket, message):
+        try:
+            sender_id = self.clients.get(client_socket)
+            if not sender_id:
+                client_socket.send(Protocol.create_error_message("Not authenticated"))
+                return
+
+            # Extract metadata
+            data = message["data"]
+            filename = data.get("filename")
+            file_size = data.get("file_size")
+            receiver = data.get("receiver")
+
+            if not filename or not file_size:
+                client_socket.send(Protocol.create_error_message("Invalid file metadata"))
+                return
+
+            # Read file data directly from the socket
+            file_data = b""
+            while len(file_data) < file_size:
+                chunk = client_socket.recv(file_size - len(file_data))
+                if not chunk:
+                    self.logger.error(f"Incomplete file data received from {client_socket.getpeername()}")
+                    client_socket.send(Protocol.create_error_message("Incomplete file data"))
+                    return
+                file_data += chunk
+
+            receiver_id = self.database.get_user_id(receiver) if receiver else None
+            if not receiver_id:
+                client_socket.send(Protocol.create_error_message(f"User {receiver} not found"))
+                return
+
+            # Save file
+            file_path = os.path.join('files', filename)
+            with open(file_path, 'wb') as f:
+                f.write(file_data)
+
+            self.database.store_file(sender_id, receiver_id, filename)
+
+            # Forward file to receiver
+            for sock, uid in self.clients.items():
+                if uid == receiver_id:
+                    sock.send(Protocol.create_file_message(
+                        receiver, filename, file_data
+                    ))
+
+        except Exception as e:
+            self.logger.error(f"Error processing file message from {client_socket.getpeername()}: {e}")
+            client_socket.send(Protocol.create_error_message(f"Error processing file: {e}"))
+
     # Client handling logic
     def handle_client(self, client_socket, addr):
         try:
             while self.running:
-                # Set timeout to avoid premature disconnection
                 client_socket.settimeout(10.0)
                 try:
                     message = Protocol.decode_message(client_socket, use_timeout=True)
                     if message is None:
-                        # Check if socket is closed by client
                         try:
                             data = client_socket.recv(1, socket.MSG_PEEK)
-
                             if not data:
                                 self.logger.info(f"Client {addr} disconnected (socket closed)")
                                 break
-
                             else:
                                 self.logger.debug(f"Client {addr} still connected, received empty message")
                                 continue
-
                         except socket.error as e:
                             self.logger.info(f"Client {addr} disconnected (socket error: {e})")
                             break
 
                     self.logger.info(f"Processing message from {addr}: {message['type']}")
-                    self.process_message(client_socket, message)
+                    if message["type"] == Protocol.MESSAGE_TYPES["file"]:
+                        # For file messages, pass the socket to handle_file to read the file data
+                        self.process_file_message(client_socket, message)
+                    else:
+                        self.process_message(client_socket, message)
 
                 except socket.timeout:
                     self.logger.debug(f"Client {addr} socket timeout, continuing to wait")
-                    continue  # Keep connection open
-
+                    continue
                 except Exception as e:
                     self.logger.error(f"Error processing message from {addr}: {e}")
-                    # Check if socket is still open
                     try:
                         client_socket.recv(1, socket.MSG_PEEK)
                         self.logger.debug(f"Client {addr} socket still open, continuing")
                         continue
-
                     except socket.error:
                         self.logger.info(f"Client {addr} disconnected (socket error after exception: {e})")
                         break
 
         except Exception as e:
             self.logger.error(f"Error in handle_client {addr}: {e}")
-
         finally:
             self.remove_client(client_socket)
             try:
                 client_socket.close()
-
             except Exception as e:
                 self.logger.error(f"Error closing client socket {addr}: {e}")
 
@@ -158,22 +202,14 @@ class Server:
             msg_type = message["type"]
             data = message["data"]
 
-            # Determine message type and call corresponding method
             if msg_type == Protocol.MESSAGE_TYPES["login"]:
                 self.handle_login(client_socket, data)
-
             elif msg_type == Protocol.MESSAGE_TYPES["register"]:
                 self.handle_register(client_socket, data)
-
             elif msg_type == Protocol.MESSAGE_TYPES["message"]:
                 self.handle_message(client_socket, data)
-
-            elif msg_type == Protocol.MESSAGE_TYPES["file"]:
-                self.handle_file(client_socket, data)
-
             elif msg_type == Protocol.MESSAGE_TYPES["contact_list"]:
                 self.handle_contact_list(client_socket)
-
             else:
                 client_socket.send(Protocol.create_error_message("Unknown message type"))
 
@@ -268,18 +304,20 @@ class Server:
         
             for sock, uid in self.clients.items():
                 if uid == receiver_id:
-                    sock.send(Protocol.create_file_message(self.database.get_username(sender_id), receiver, filename, file_data))
+                    sock.send(Protocol.create_file_message(receiver, filename, file_data))
 
         else:
             client_socket.send(Protocol.create_error_message(f"User {receiver} not found"))
 
     def handle_contact_list(self, client_socket):
-        """Handle contact list requests."""
         user_id = self.clients.get(client_socket)
+
         if not user_id:
             client_socket.send(Protocol.create_error_message("Not authenticated"))
             return
+        
         contacts = self.database.get_contacts(user_id)
+        
         client_socket.send(Protocol.encode_message(
             Protocol.MESSAGE_TYPES["contact_list"],
             {"contacts": contacts}

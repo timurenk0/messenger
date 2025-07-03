@@ -101,6 +101,21 @@ class Database:
             self.logger.error(f"Error authenticating user {username}: {str(e)}")
             return None
         
+    # Fetch contacts from the database by user if
+    def get_contacts(self, user_id):
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute("SELECT username FROM users WHERE id != ?", (user_id,))
+            contacts = [row[0] for row in cursor.fetchall()]
+            
+            self.logger.debug(f"Retrieved contacts for user {user_id}: {contacts}")
+
+            return contacts if len(contacts) > 0 else []
+        
+        except Exception as e:
+            self.logger.error(f"Error retrieving contacts for user {user_id}: {e}")
+            return []
+        
     # Fetch username from the database by user id
     def get_username(self, user_id):
         try:
