@@ -7,7 +7,7 @@ from protocols import Protocol
 import logging
 
 class Client:
-    def __init__(self, host='your_server_ip_address', port=12345):
+    def __init__(self, host='localhost', port=12345):
         # Setup connection
         self.host = host
         self.port = port

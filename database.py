@@ -81,84 +81,105 @@ class Database:
              self.logger.error(f"Error adding user {username} : {str(e)}")
              return False
 
-# Authenticate (login) user
-def authenticate_user(self, username, password):
-     try:
-        cursor = self.conn.cursor()
-        cursor.execute("SELECT id FROM users WHERE username = ? AND password = ?", (username, password))
-        result = cursor.fetchone()
-        # Fetch user id 
-        user_id = result[0] if result else None
+    # Authenticate (login) user
+    def authenticate_user(self, username, password):
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute("SELECT id FROM users WHERE username = ? AND password = ?", (username, password))
+            result = cursor.fetchone()
+            # Fetch user id 
+            user_id = result[0] if result else None
 
-        if user_id:
-            self.logger.info(f"User {username} added to the database with ID {user_id}")
-        else:
-            self.logger.warning(f"Authentication failed for user {username}")
+            if user_id:
+                self.logger.info(f"User {username} added to the database with ID {user_id}")
+            else:
+                self.logger.warning(f"Authentication failed for user {username}")
+            
+            return user_id
         
-        return user_id
-     
-     except Exception as e:
-         self.logger.error(f"Error authenticating user {username}: {str(e)}")
-         return None
-     
-# Fetch username from the database by user id
-def get_username(self, user_id):
-    try:
-        cursor = self.conn.cursor()
-        cursor.execute("SELECT username FROM users WHERE id = ?", (user_id,))
-        result = cursor.fetchone()
-
-        username = result[0] if result else None
-
-        if username:
-            self.logger.debug(f"Retrieved username for user {user_id}")
-        else:
-            self.logger.warning(f"No username found for user {user_id}")
+        except Exception as e:
+            self.logger.error(f"Error authenticating user {username}: {str(e)}")
+            return None
         
-        return username
-    
-    except Exception as e:
-        self.logger.error(f"Error retrieving user_id for username {username}: {str(e)}")
-        return None
+    # Fetch username from the database by user id
+    def get_username(self, user_id):
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute("SELECT username FROM users WHERE id = ?", (user_id,))
+            result = cursor.fetchone()
 
-# Store sent messages to the database
-def store_message(self, sender_id, receiver_id, message):
-    try:
-        cursor = self.conn.cursor()
-        cursor.execute("INSERT INTO messages (sender_id, receiver_id, message) VALUES (?, ?, ?)", (sender_id, receiver_id, message))
+            username = result[0] if result else None
 
-        self.conn.commit()
-        self.logger.info(f"Stored message from user {sender_id} to user {receiver_id}")
+            if username:
+                self.logger.debug(f"Retrieved username for user {user_id}")
+            else:
+                self.logger.warning(f"No username found for user {user_id}")
+            
+            return username
+        
+        except Exception as e:
+            self.logger.error(f"Error retrieving user_id for username {username}: {str(e)}")
+            return None
+        
+    # Get user id from the database by username
+    def get_user_id(self, username):
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute("SELECT id FROM users WHERE username = ?", (username,))
+            result = cursor.fetchone()
 
-        return True
-    
-    except Exception as e:
-        self.logger.error(f"Error storing message from user {sender_id}: {str(e)}")
-        return False
-    
-# Store sent files (filenames) to the database
-def store_file(self, sender_id, receiver_id, filename):
-    try:
-        cursor = self.conn.cursor()
-        cursor.execute("INSERT INTO files (sender_id, receiver_id, filename) VALUES (?, ?, ?)", (sender_id, receiver_id, filename))
+            user_id = result[0]
 
-        self.conn.commit()
-        self.logger.info(f"Stored file {filename} sent from user {sender_id} to user {receiver_id}")
+            if user_id:
+                self.logger.debug(f"Retrieved id {user_id} for user {username}")
 
-        return True
-    
-    except Exception as e:
-        self.logger.error(f"Error storing file {filename} from user {sender_id}: {str(e)}")
-        return False
-    
-# Close the connection with the database
-def close(self):
-    try:
-        self.conn.close()
-        self.logger.info("Database connection closed")
-    
-    except Exception as e:
-        self.logger.error(f"Error closing database: {str(e)}")
+            else:
+                self.logger.warning(f"No user id found for user {username}")
+
+            return user_id
+        
+        except Exception as e:
+            self.logger.error(f"Error retrieving user id for user {username}: {e}")
+            return None
+
+    # Store sent messages to the database
+    def store_message(self, sender_id, receiver_id, message):
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute("INSERT INTO messages (sender_id, receiver_id, message) VALUES (?, ?, ?)", (sender_id, receiver_id, message))
+
+            self.conn.commit()
+            self.logger.info(f"Stored message from user {sender_id} to user {receiver_id}")
+
+            return True
+        
+        except Exception as e:
+            self.logger.error(f"Error storing message from user {sender_id}: {str(e)}")
+            return False
+        
+    # Store sent files (filenames) to the database
+    def store_file(self, sender_id, receiver_id, filename):
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute("INSERT INTO files (sender_id, receiver_id, filename) VALUES (?, ?, ?)", (sender_id, receiver_id, filename))
+
+            self.conn.commit()
+            self.logger.info(f"Stored file {filename} sent from user {sender_id} to user {receiver_id}")
+
+            return True
+        
+        except Exception as e:
+            self.logger.error(f"Error storing file {filename} from user {sender_id}: {str(e)}")
+            return False
+        
+    # Close the connection with the database
+    def close(self):
+        try:
+            self.conn.close()
+            self.logger.info("Database connection closed")
+        
+        except Exception as e:
+            self.logger.error(f"Error closing database: {str(e)}")
     
             
             
