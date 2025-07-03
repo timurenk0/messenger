@@ -18,6 +18,12 @@ python -m venv venv
 venv\Scripts\activate
 ```
 
+### 3. Configure client file
+```
+# Replace "your_server_ip_address" to the actual ip of the machine that runs the server.py file
+def __init__(self, host="your_server_ip_address", port=12345):
+```
+
 ### 3. Run the application
 ```
 python server.py # on the server device
